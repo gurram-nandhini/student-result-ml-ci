@@ -1,0 +1,72 @@
+name: Student Result ML CI
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  train-and-test:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      # --------------------------------
+      # Step 1: Checkout Repository
+      # --------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+
+      # --------------------------------
+      # Step 2: Setup Python
+      # --------------------------------
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+
+
+      # --------------------------------
+      # Step 3: Upgrade pip
+      # --------------------------------
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
+
+
+      # --------------------------------
+      # Step 4: Install Dependencies
+      # --------------------------------
+      - name: Install ML dependencies
+        run: pip install -r requirements.txt
+
+
+      # --------------------------------
+      # Step 5: Train ML Model
+      # --------------------------------
+      - name: Train student result model
+        run: python train_model.py
+
+
+      # --------------------------------
+      # Step 6: ML Quality Gate
+      # --------------------------------
+      - name: Check ML quality gate
+        run: python quality_gate.py
+
+
+      # --------------------------------
+      # Step 7: Automated ML Tests
+      # --------------------------------
+      - name: Run automated ML tests
+        run: python -m unittest discover -v
