@@ -1,58 +1,66 @@
-name: Student Result ML CI-CD
+name: CKD Prediction ML CI-CD
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
-  workflow_dispatch:
+push:
+branches:
+- main
+pull_request:
+branches:
+- main
+workflow_dispatch:
 
 permissions:
-  contents: read
+contents: read
 
 jobs:
-  train-test-deliver:
-    runs-on: ubuntu-latest
+train-test-deliver:
+runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+```
+steps:
+  - name: Checkout repository
+    uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
+  - name: Set up Python
+    uses: actions/setup-python@v5
+    with:
+      python-version: "3.11"
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
+  - name: Install dependencies
+    run: pip install -r requirements.txt
 
-      - name: Train student result model
-        run: python train_model.py
+  - name: Verify CKD dataset exists
+    run: |
+      test -f dataset/kidney_disease.csv
 
-      - name: Check ML quality gate
-        run: python quality_gate.py
+  - name: Train CKD model
+    run: python train_model.py
 
-      - name: Run ML tests
-        run: python -m unittest test_ml_pipeline.py -v
+  - name: Verify model and metrics
+    run: |
+      python -c "import joblib; b=joblib.load('models/ckd_pipeline.joblib'); print('Model:', b['model_name']); print('Metrics:', b['metrics'])"
 
-      - name: Run prediction application tests
-        run: python -m unittest test_app.py -v
+  - name: Run ML quality gate
+    run: |
+      python -c "import json; m=json.load(open('models/ckd_pipeline.joblib', 'rb')) if False else None"
+      python -c "import joblib; b=joblib.load('models/ckd_pipeline.joblib'); a=b['metrics']['accuracy']; print('Accuracy:', a); assert a >= 0.80, f'Accuracy {a:.4f} is below 0.80'"
 
-      - name: Prepare release candidate
-        run: |
-          mkdir -p release_candidate
-          cp app.py release_candidate/
-          cp student_result_model.pkl release_candidate/
-          cp metrics.json release_candidate/
-          cp requirements.txt release_candidate/
-          printf "Student Result Prediction ML Application\nRun: python app.py\nEndpoint: POST /predict\n" > release_candidate/DEPLOYMENT.txt
+  - name: Run CKD API tests
+    run: python -m unittest test_app.py -v
 
-      - name: Upload release candidate
-        uses: actions/upload-artifact@v4
-        with:
-          name: student-result-ml-release
-          path: release_candidate/
-          if-no-files-found: error
-          retention-days: 7
+  - name: Prepare release candidate
+    run: |
+      mkdir -p release_candidate
+      cp app.py release_candidate/
+      cp requirements.txt release_candidate/
+      cp -r models release_candidate/
+      printf "CKD Prediction API\nStart: python app.py\nHealth: GET /health\nPrediction: POST /predict\n" > release_candidate/DEPLOYMENT.txt
+
+  - name: Upload release candidate
+    uses: actions/upload-artifact@v4
+    with:
+      name: ckd-prediction-release
+      path: release_candidate/
+      if-no-files-found: error
+      retention-days: 7
+```
