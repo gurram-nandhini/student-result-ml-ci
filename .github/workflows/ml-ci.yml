@@ -4,11 +4,9 @@ on:
   push:
     branches:
       - main
-
   pull_request:
     branches:
       - main
-
   workflow_dispatch:
 
 permissions:
@@ -27,9 +25,6 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Upgrade pip
-        run: python -m pip install --upgrade pip
-
       - name: Install dependencies
         run: pip install -r requirements.txt
 
@@ -39,7 +34,7 @@ jobs:
       - name: Check ML quality gate
         run: python quality_gate.py
 
-      - name: Run automated ML tests
+      - name: Run ML tests
         run: python -m unittest test_ml_pipeline.py -v
 
       - name: Run prediction application tests
