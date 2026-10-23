@@ -1,130 +1,197 @@
-import pandas as pd
+import os
 import joblib
-import json
+import pandas as pd
 
 from sklearn.model_selection import train_test_split
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import (
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score,
+    classification_report,
+)
 
+# 1. Load dataset
+DATASET_PATH = "dataset/kidney_disease.csv"
 
-# ---------------------------------------
-# 1. Create Student Dataset
-# ---------------------------------------
+df = pd.read_csv(DATASET_PATH)
 
-data = {
-    "study_hours": [
-        8, 7, 6, 9, 5,
-        2, 3, 1, 4, 2,
-        9, 8, 7, 6, 5,
-        1, 2, 3, 4, 2,
-        10, 9, 8, 7, 6,
-        1, 3, 2, 4, 3,
-        9, 8, 7, 6, 5,
-        2, 1, 3, 2, 4,
-        10, 9, 8, 7, 6,
-        1, 2, 3, 4, 2
-    ],
-    "attendance": [
-        95, 90, 85, 98, 80,
-        60, 65, 55, 70, 62,
-        96, 92, 88, 84, 82,
-        50, 58, 65, 72, 60,
-        99, 95, 91, 89, 86,
-        55, 62, 59, 75, 68,
-        94, 90, 87, 83, 81,
-        52, 57, 66, 71, 64,
-        98, 94, 90, 88, 85,
-        48, 56, 63, 69, 61
-    ],
-    "result": [
-        1, 1, 1, 1, 1,
-        0, 0, 0, 0, 0,
-        1, 1, 1, 1, 1,
-        0, 0, 0, 0, 0,
-        1, 1, 1, 1, 1,
-        0, 0, 0, 0, 0,
-        1, 1, 1, 1, 1,
-        0, 0, 0, 0, 0,
-        1, 1, 1, 1, 1,
-        0, 0, 0, 0, 0
-    ]
-}
+# 2. Clean column names
+df.columns = df.columns.str.strip().str.lower()
 
-df = pd.DataFrame(data)
+# 3. Remove duplicate rows
+df = df.drop_duplicates().copy()
 
-# Save demonstration dataset
-df.to_csv("student_results.csv", index=False)
+# 4. Identify target column
+TARGET = "classification"
 
-print("Student dataset created.")
-print(df.head())
+if TARGET not in df.columns:
+    raise ValueError(
+        f"Target column '{TARGET}' not found. "
+        f"Available columns: {df.columns.tolist()}"
+    )
 
+# 5. Clean target values
+df[TARGET] = (
+    df[TARGET]
+    .astype(str)
+    .str.strip()
+    .str.lower()
+)
 
-# ---------------------------------------
-# 2. Prepare Features and Target
-# ---------------------------------------
+# Standardize common CKD labels
+df[TARGET] = df[TARGET].replace({
+    "ckd": "ckd",
+    "notckd": "notckd",
+    "not ckd": "notckd",
+})
 
-X = df[["study_hours", "attendance"]]
-y = df["result"]
+# Remove missing or unexpected target values
+df = df[df[TARGET].isin(["ckd", "notckd"])].copy()
 
+# 6. Separate features and target
+X = df.drop(columns=[TARGET])
+y = df[TARGET].map({
+    "notckd": 0,
+    "ckd": 1,
+})
 
-# ---------------------------------------
-# 3. Split Dataset
-# ---------------------------------------
+# Remove columns that contain no usable information
+X = X.dropna(axis=1, how="all")
 
+# Convert blank strings into missing values
+X = X.replace(r"^\s*$", float("nan"), regex=True)
+
+# Identify numeric and categorical columns
+numeric_features = X.select_dtypes(
+    include=["number"]
+).columns.tolist()
+
+categorical_features = [
+    column for column in X.columns
+    if column not in numeric_features
+]
+
+# 7. Create preprocessing pipelines
+numeric_pipeline = Pipeline([
+    ("imputer", SimpleImputer(strategy="median")),
+    ("scaler", StandardScaler()),
+])
+
+categorical_pipeline = Pipeline([
+    (
+        "imputer",
+        SimpleImputer(
+            strategy="most_frequent"
+        ),
+    ),
+    (
+        "encoder",
+        OneHotEncoder(
+            handle_unknown="ignore"
+        ),
+    ),
+])
+
+preprocessor = ColumnTransformer([
+    (
+        "numeric",
+        numeric_pipeline,
+        numeric_features,
+    ),
+    (
+        "categorical",
+        categorical_pipeline,
+        categorical_features,
+    ),
+])
+
+# 8. Create the complete ML pipeline
+model = Pipeline([
+    ("preprocessor", preprocessor),
+    (
+        "classifier",
+        RandomForestClassifier(
+            n_estimators=200,
+            random_state=42,
+            class_weight="balanced",
+        ),
+    ),
+])
+
+# 9. Split the dataset
 X_train, X_test, y_train, y_test = train_test_split(
     X,
     y,
-    test_size=0.2,
+    test_size=0.20,
     random_state=42,
-    stratify=y
+    stratify=y,
 )
 
-
-# ---------------------------------------
-# 4. Train Model
-# ---------------------------------------
-
-model = RandomForestClassifier(
-    n_estimators=100,
-    random_state=42
-)
-
+# 10. Train the model
 model.fit(X_train, y_train)
 
+# 11. Make predictions
+y_pred = model.predict(X_test)
 
-# ---------------------------------------
-# 5. Evaluate Model
-# ---------------------------------------
+# 12. Evaluate the model
+accuracy = accuracy_score(y_test, y_pred)
 
-predictions = model.predict(X_test)
+precision = precision_score(
+    y_test,
+    y_pred,
+    zero_division=0,
+)
 
-accuracy = accuracy_score(y_test, predictions)
+recall = recall_score(
+    y_test,
+    y_pred,
+    zero_division=0,
+)
 
-print("Model Accuracy:", accuracy)
+f1 = f1_score(
+    y_test,
+    y_pred,
+    zero_division=0,
+)
 
+print("\nMODEL EVALUATION")
+print("----------------")
+print(f"Accuracy : {accuracy:.4f}")
+print(f"Precision: {precision:.4f}")
+print(f"Recall   : {recall:.4f}")
+print(f"F1 Score : {f1:.4f}")
 
-# ---------------------------------------
-# 6. Save Model
-# ---------------------------------------
+print("\nClassification Report:")
+print(classification_report(
+    y_test,
+    y_pred,
+    zero_division=0,
+))
 
-joblib.dump(model, "student_result_model.pkl")
+# 13. Save the complete pipeline
+os.makedirs("models", exist_ok=True)
 
-print("Model saved as student_result_model.pkl")
+joblib.dump(
+    {
+        "pipeline": model,
+        "feature_names": X.columns.tolist(),
+        "metrics": {
+            "accuracy": float(accuracy),
+            "precision": float(precision),
+            "recall": float(recall),
+            "f1_score": float(f1),
+        },
+        "model_name": "CKD Prediction Model",
+        "model_version": "1.0.0",
+    },
+    "models/ckd_pipeline.joblib",
+)
 
-
-# ---------------------------------------
-# 7. Save Metrics
-# ---------------------------------------
-
-metrics = {
-    "accuracy": float(accuracy),
-    "training_records": len(X_train),
-    "testing_records": len(X_test)
-}
-
-with open("metrics.json", "w") as file:
-    json.dump(metrics, file, indent=4)
-
-print("Metrics saved to metrics.json")
-
-print("Training completed successfully.")
+print("\nModel saved successfully!")
+print("Location: models/ckd_pipeline.joblib")
