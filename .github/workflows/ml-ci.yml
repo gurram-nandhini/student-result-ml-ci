@@ -1,60 +1,6 @@
-```yaml
-name: Student Result ML CI-CD
-
-on:
-  push:
-    branches:
-      - main
-
-  pull_request:
-    branches:
-      - main
-
-  workflow_dispatch:
-
-permissions:
-  contents: read
-
-jobs:
-  train-test-deliver:
-    runs-on: ubuntu-latest
-
-    steps:
-      # Step 1: Checkout repository
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      # Step 2: Set up Python
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      # Step 3: Upgrade pip
-      - name: Upgrade pip
-        run: python -m pip install --upgrade pip
-
-      # Step 4: Install dependencies
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      # Step 5: Train ML model
-      - name: Train student result model
-        run: python train_model.py
-
-      # Step 6: Check ML quality gate
-      - name: Check ML quality gate
-        run: python quality_gate.py
-
-      # Step 7: Run ML tests
-      - name: Run automated ML tests
-        run: python -m unittest test_ml_pipeline.py -v
-
-      # Step 8: Run prediction application tests
       - name: Run prediction application tests
         run: python -m unittest test_app.py -v
 
-      # Step 9: Prepare release candidate
       - name: Prepare release candidate
         run: |
           mkdir -p release_candidate
@@ -62,9 +8,8 @@ jobs:
           cp student_result_model.pkl release_candidate/
           cp metrics.json release_candidate/
           cp requirements.txt release_candidate/
-          printf 'Student Result Prediction ML Application\nRun: python app.py\nEndpoint: POST /predict\n' > release_candidate/DEPLOYMENT.txt
+          printf "Student Result Prediction ML Application\nRun: python app.py\nEndpoint: POST /predict\n" > release_candidate/DEPLOYMENT.txt
 
-      # Step 10: Upload release candidate
       - name: Upload release candidate
         uses: actions/upload-artifact@v4
         with:
@@ -72,4 +17,3 @@ jobs:
           path: release_candidate/
           if-no-files-found: error
           retention-days: 7
-```
