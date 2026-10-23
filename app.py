@@ -1,33 +1,22 @@
-from pathlib import Path
-
+```python
 import joblib
 import pandas as pd
 from flask import Flask, jsonify, request
 
 app = Flask(__name__)
 
-MODEL_PATH = Path("student_result_model.pkl")
+MODEL_PATH = "student_result_model.pkl"
 
-FEATURES = [
-    "attendance",
-    "internal_marks",
-    "assignment_marks",
-    "previous_score"
-]
+# These feature names must match train_model.py
+FEATURES = ["study_hours", "attendance"]
 
 
 def load_model():
-    if not MODEL_PATH.exists():
-        raise FileNotFoundError(
-            "student_result_model.pkl was not found. "
-            "Run the training pipeline first."
-        )
-
     return joblib.load(MODEL_PATH)
 
 
 @app.get("/")
-def health_check():
+def home():
     return jsonify({
         "status": "ok",
         "service": "student-result-prediction"
@@ -45,9 +34,9 @@ def health():
 def predict():
     data = request.get_json(silent=True)
 
-    if not data:
+    if not isinstance(data, dict):
         return jsonify({
-            "error": "JSON request body is required"
+            "error": "A JSON request body is required"
         }), 400
 
     missing_fields = [
@@ -61,23 +50,28 @@ def predict():
             "missing_fields": missing_fields
         }), 400
 
-    sample = pd.DataFrame([{
-        feature: data[feature]
-        for feature in FEATURES
-    }])
+    try:
+        sample = pd.DataFrame([{
+            "study_hours": float(data["study_hours"]),
+            "attendance": float(data["attendance"])
+        }])
 
-    model = load_model()
-    prediction_code = int(model.predict(sample)[0])
+        model = load_model()
+        prediction_code = int(model.predict(sample)[0])
 
-    prediction = (
-        "PASS" if prediction_code == 1 else "FAIL"
-    )
+        prediction = "PASS" if prediction_code == 1 else "FAIL"
 
-    return jsonify({
-        "prediction": prediction,
-        "prediction_code": prediction_code
-    })
+        return jsonify({
+            "prediction": prediction,
+            "prediction_code": prediction_code
+        })
+
+    except (TypeError, ValueError):
+        return jsonify({
+            "error": "study_hours and attendance must be numeric"
+        }), 400
 
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
+```
