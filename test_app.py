@@ -1,3 +1,4 @@
+```python
 import unittest
 
 from app import app
@@ -21,10 +22,8 @@ class TestPredictionApplication(unittest.TestCase):
         response = self.client.post(
             "/predict",
             json={
-                "attendance": 90,
-                "internal_marks": 85,
-                "assignment_marks": 88,
-                "previous_score": 80
+                "study_hours": 9,
+                "attendance": 95
             }
         )
 
@@ -38,10 +37,8 @@ class TestPredictionApplication(unittest.TestCase):
         response = self.client.post(
             "/predict",
             json={
-                "attendance": 55,
-                "internal_marks": 30,
-                "assignment_marks": 40,
-                "previous_score": 35
+                "study_hours": 1,
+                "attendance": 50
             }
         )
 
@@ -55,8 +52,7 @@ class TestPredictionApplication(unittest.TestCase):
         response = self.client.post(
             "/predict",
             json={
-                "attendance": 90,
-                "internal_marks": 85
+                "study_hours": 9
             }
         )
 
@@ -69,3 +65,4 @@ class TestPredictionApplication(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+```
