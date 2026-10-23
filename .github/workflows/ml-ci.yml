@@ -15,12 +15,11 @@ contents: read
 jobs:
 train-test-deliver:
 runs-on: ubuntu-latest
+steps:
+- name: Checkout repository
+uses: actions/checkout@v4
 
 ```
-steps:
-  - name: Checkout repository
-    uses: actions/checkout@v4
-
   - name: Set up Python
     uses: actions/setup-python@v5
     with:
@@ -30,8 +29,7 @@ steps:
     run: pip install -r requirements.txt
 
   - name: Verify CKD dataset exists
-    run: |
-      test -f dataset/kidney_disease.csv
+    run: test -f dataset/kidney_disease.csv
 
   - name: Train CKD model
     run: python train_model.py
@@ -42,7 +40,6 @@ steps:
 
   - name: Run ML quality gate
     run: |
-      python -c "import json; m=json.load(open('models/ckd_pipeline.joblib', 'rb')) if False else None"
       python -c "import joblib; b=joblib.load('models/ckd_pipeline.joblib'); a=b['metrics']['accuracy']; print('Accuracy:', a); assert a >= 0.80, f'Accuracy {a:.4f} is below 0.80'"
 
   - name: Run CKD API tests
