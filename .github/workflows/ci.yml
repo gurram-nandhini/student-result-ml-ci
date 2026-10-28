@@ -35,8 +35,19 @@ jobs:
 
       - name: Check Python syntax
         run: |
-          python -m py_compile result_logic.py test_result_logic.py
+          python -m py_compile result_logic.py test_result_logic.py train_model.py
 
       - name: Run automated tests
         run: |
           python -m unittest discover -v
+
+      - name: Train machine learning model
+        run: |
+          python train_model.py
+
+      - name: Upload trained model artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: student-result-model
+          path: student_result_model.joblib
+          if-no-files-found: error
