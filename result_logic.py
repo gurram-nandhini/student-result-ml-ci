@@ -2,6 +2,7 @@ def predict_result(marks, attendance):
 if not isinstance(marks, (int, float)):
 raise ValueError("Marks must be a number.")
 
+```
 if not isinstance(attendance, (int, float)):
     raise ValueError("Attendance must be a number.")
 
@@ -15,3 +16,4 @@ if marks < 40 or attendance < 75:
     return "Fail"
 
 return "Pass"
+```
