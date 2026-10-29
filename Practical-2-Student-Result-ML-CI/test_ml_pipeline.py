@@ -7,7 +7,6 @@ import pandas as pd
 
 class TestMLPipeline(unittest.TestCase):
 
-```
 def test_dataset_created(self):
     self.assertTrue(
         os.path.exists("student_results.csv")
@@ -73,7 +72,6 @@ def test_low_performance_student(self):
     prediction = model.predict(sample)[0]
 
     self.assertEqual(int(prediction), 0)
-```
 
 if **name** == "**main**":
 unittest.main()
