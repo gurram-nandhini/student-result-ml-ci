@@ -18,7 +18,7 @@ def create_dataset():
         "attendance": rng.integers(50, 101, number_of_students),
         "internal_marks": rng.integers(20, 101, number_of_students),
         "assignment_marks": rng.integers(30, 101, number_of_students),
-        "previous_score": rng.integers(30, 101, number_of_students)
+        "previous_score": rng.integers(30, 101, number_of_students),
     })
 
     data["weighted_score"] = (
@@ -43,7 +43,7 @@ def train_model():
         "attendance",
         "internal_marks",
         "assignment_marks",
-        "previous_score"
+        "previous_score",
     ]
 
     X = data[features]
@@ -54,7 +54,7 @@ def train_model():
         y,
         test_size=0.20,
         random_state=42,
-        stratify=y
+        stratify=y,
     )
 
     print("Training records:", len(X_train))
@@ -64,8 +64,8 @@ def train_model():
         ("scaler", StandardScaler()),
         (
             "classifier",
-            LogisticRegression(max_iter=1000, random_state=42)
-        )
+            LogisticRegression(max_iter=1000, random_state=42),
+        ),
     ])
 
     print("Training model...")
@@ -87,7 +87,7 @@ def train_model():
     metrics = {
         "accuracy": float(accuracy),
         "training_records": len(X_train),
-        "testing_records": len(X_test)
+        "testing_records": len(X_test),
     }
 
     with open("metrics.json", "w", encoding="utf-8") as file:
