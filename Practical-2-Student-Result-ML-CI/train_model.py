@@ -28,7 +28,6 @@ data["weighted_score"] = (
     \+ 0.20 * data["previous_score"]
 )
 
-# 1 = PASS, 0 = FAIL
 data["result"] = (data["weighted_score"] >= 60).astype(int)
 
 return data
@@ -40,9 +39,6 @@ print("Creating dataset...")
 ```
 data = create_dataset()
 data.to_csv("student_results.csv", index=False)
-
-print("Dataset created successfully.")
-print("Number of records:", len(data))
 
 features = [
     "attendance",
@@ -67,13 +63,7 @@ print("Testing records:", len(X_test))
 
 model = Pipeline([
     ("scaler", StandardScaler()),
-    (
-        "classifier",
-        LogisticRegression(
-            max_iter=1000,
-            random_state=42
-        )
-    )
+    ("classifier", LogisticRegression(max_iter=1000, random_state=42))
 ])
 
 print("Training model...")
@@ -87,12 +77,10 @@ matrix = confusion_matrix(y_test, predictions)
 print("\nModel Evaluation")
 print("----------------")
 print("Accuracy:", round(accuracy, 4))
-print("\nConfusion Matrix:")
+print("Confusion Matrix:")
 print(matrix)
 
 joblib.dump(model, "student_result_model.pkl")
-
-print("\nModel saved as student_result_model.pkl")
 
 metrics = {
     "accuracy": float(accuracy),
@@ -103,7 +91,8 @@ metrics = {
 with open("metrics.json", "w") as file:
     json.dump(metrics, file, indent=4)
 
-print("Metrics saved as metrics.json")
+print("Model saved successfully.")
+print("Metrics saved successfully.")
 
 return accuracy
 ```
