@@ -10,10 +10,9 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
 def create_dataset():
-rng = np.random.default_rng(42)
-number_of_students = 300
+    rng = np.random.default_rng(42)
+    number_of_students = 300
 
-```
 data = pd.DataFrame({
     "attendance": rng.integers(50, 101, number_of_students),
     "internal_marks": rng.integers(20, 101, number_of_students),
@@ -31,12 +30,11 @@ data["weighted_score"] = (
 data["result"] = (data["weighted_score"] >= 60).astype(int)
 
 return data
-```
 
 def train_model():
 print("Creating dataset...")
 
-```
+
 data = create_dataset()
 data.to_csv("student_results.csv", index=False)
 
@@ -95,7 +93,7 @@ print("Model saved successfully.")
 print("Metrics saved successfully.")
 
 return accuracy
-```
+
 
 if **name** == "**main**":
 train_model()
