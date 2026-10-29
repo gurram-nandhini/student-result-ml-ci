@@ -1,0 +1,74 @@
+name: Practical 2 - Student Result ML CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  train-and-test:
+    name: Train and Test Student Result Model
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: Practical-2-Student-Result-ML-CI
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Check Python syntax
+        run: python -m compileall -q .
+
+      - name: Train student result model
+        run: python train_model.py
+
+      - name: Run automated tests
+        run: python -m unittest discover -v
+
+      - name: Upload trained model and metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: practical-2-model-and-metrics
+          path: |
+            Practical-2-Student-Result-ML-CI/student_result_model.pkl
+            Practical-2-Student-Result-ML-CI/student_results.csv
+            Practical-2-Student-Result-ML-CI/metrics.json
+          if-no-files-found: error
+
+### Step 3: Commit the file
+
+1. Click **Commit changes**.
+2. Enter this commit message: `Add Practical 2 ML CI workflow`.
+3. Commit directly to `main`.
+
+### Step 4: Check GitHub Actions
+
+1. Open the repository's **Actions** tab.
+2. Look for **Practical 2 - Student Result ML CI**.
+3. Click the latest workflow run.
+4. Check whether all steps have green check marks.
+5. Open the successful run and look for the `practical-2-model-and-metrics` artifact.
+
+**Important:** This workflow assumes your `train_model.py` and `test_ml_pipeline.py` files are inside `Practical-2-Student-Result-ML-CI/`, and that the training script creates all three artifact files. Your Python code must also have correct indentation and syntax.
+
+If the workflow fails, open the failed step and send me a screenshot of the error.
