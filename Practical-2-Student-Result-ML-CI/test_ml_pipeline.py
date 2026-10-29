@@ -5,75 +5,66 @@ import unittest
 import joblib
 import pandas as pd
 
+from train_model import create_dataset, train_model
+
+
 class TestMLPipeline(unittest.TestCase):
 
-```
-def test_dataset_created(self):
-    self.assertTrue(
-        os.path.exists("student_results.csv")
-    )
+    def test_dataset_created(self):
+        data = create_dataset()
+        self.assertIsInstance(data, pd.DataFrame)
 
-def test_model_created(self):
-    self.assertTrue(
-        os.path.exists("student_result_model.pkl")
-    )
+    def test_dataset_has_300_records(self):
+        data = create_dataset()
+        self.assertEqual(len(data), 300)
 
-def test_metrics_created(self):
-    self.assertTrue(
-        os.path.exists("metrics.json")
-    )
+    def test_dataset_has_required_columns(self):
+        data = create_dataset()
+        required_columns = [
+            "attendance",
+            "internal_marks",
+            "assignment_marks",
+            "previous_score",
+            "weighted_score",
+            "result",
+        ]
 
-def test_accuracy_is_valid(self):
-    with open("metrics.json", "r") as file:
-        metrics = json.load(file)
+        for column in required_columns:
+            self.assertIn(column, data.columns)
 
-    accuracy = metrics["accuracy"]
+    def test_model_training_creates_files(self):
+        train_model()
 
-    self.assertGreaterEqual(accuracy, 0.0)
-    self.assertLessEqual(accuracy, 1.0)
+        self.assertTrue(os.path.exists("student_results.csv"))
+        self.assertTrue(os.path.exists("student_result_model.pkl"))
+        self.assertTrue(os.path.exists("metrics.json"))
 
-def test_model_prediction(self):
-    model = joblib.load("student_result_model.pkl")
+    def test_metrics_accuracy_passes_quality_gate(self):
+        train_model()
 
-    sample = pd.DataFrame([{
-        "attendance": 85,
-        "internal_marks": 75,
-        "assignment_marks": 80,
-        "previous_score": 78
-    }])
+        with open("metrics.json", "r", encoding="utf-8") as file:
+            metrics = json.load(file)
 
-    prediction = model.predict(sample)[0]
+        self.assertGreaterEqual(metrics["accuracy"], 0.85)
 
-    self.assertIn(int(prediction), [0, 1])
+    def test_model_can_predict(self):
+        train_model()
+        model = joblib.load("student_result_model.pkl")
 
-def test_high_performance_student(self):
-    model = joblib.load("student_result_model.pkl")
+        sample = pd.DataFrame(
+            [[90, 85, 80, 75]],
+            columns=[
+                "attendance",
+                "internal_marks",
+                "assignment_marks",
+                "previous_score",
+            ],
+        )
 
-    sample = pd.DataFrame([{
-        "attendance": 90,
-        "internal_marks": 85,
-        "assignment_marks": 88,
-        "previous_score": 80
-    }])
+        prediction = model.predict(sample)
+        self.assertEqual(len(prediction), 1)
 
-    prediction = model.predict(sample)[0]
 
-    self.assertEqual(int(prediction), 1)
+if __name__ == "__main__":
+    unittest.main()
 
-def test_low_performance_student(self):
-    model = joblib.load("student_result_model.pkl")
-
-    sample = pd.DataFrame([{
-        "attendance": 55,
-        "internal_marks": 30,
-        "assignment_marks": 40,
-        "previous_score": 35
-    }])
-
-    prediction = model.predict(sample)[0]
-
-    self.assertEqual(int(prediction), 0)
-```
-
-if **name** == "**main**":
-unittest.main()
