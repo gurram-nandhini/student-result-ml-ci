@@ -20,6 +20,7 @@ class TestMLPipeline(unittest.TestCase):
 
     def test_dataset_has_required_columns(self):
         data = create_dataset()
+
         required_columns = [
             "attendance",
             "internal_marks",
@@ -49,6 +50,7 @@ class TestMLPipeline(unittest.TestCase):
 
     def test_model_can_predict(self):
         train_model()
+
         model = joblib.load("student_result_model.pkl")
 
         sample = pd.DataFrame(
@@ -62,9 +64,27 @@ class TestMLPipeline(unittest.TestCase):
         )
 
         prediction = model.predict(sample)
+
         self.assertEqual(len(prediction), 1)
+
+    def test_low_performance_student(self):
+        train_model()
+
+        model = joblib.load("student_result_model.pkl")
+
+        sample = pd.DataFrame(
+            [{
+                "attendance": 55,
+                "internal_marks": 30,
+                "assignment_marks": 40,
+                "previous_score": 35,
+            }]
+        )
+
+        prediction = model.predict(sample)[0]
+
+        self.assertEqual(int(prediction), 0)
 
 
 if __name__ == "__main__":
     unittest.main()
-
