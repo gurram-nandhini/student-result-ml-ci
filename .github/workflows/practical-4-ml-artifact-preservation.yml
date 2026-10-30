@@ -1,0 +1,56 @@
+name: Practical 4 - ML Artifact Preservation
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  train-and-test:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: Practical-4-ML-Artifact-Preservation
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Train machine learning model
+        run: python train_model.py
+
+      - name: Run ML quality gate
+        run: python quality_gate.py
+
+      - name: Run automated ML tests
+        run: python -m unittest discover -v
+
+      - name: Upload validated ML artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: practical-4-ml-artifacts
+          path: |
+            Practical-4-ML-Artifact-Preservation/student_result_model.pkl
+            Practical-4-ML-Artifact-Preservation/metrics.json
+            Practical-4-ML-Artifact-Preservation/student_results.csv
+          if-no-files-found: error
+          retention-days: 7
