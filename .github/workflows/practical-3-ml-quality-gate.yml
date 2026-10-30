@@ -49,8 +49,8 @@ jobs:
         with:
           name: student-result-ml-artifacts
           path: |
-            student_result_model.pkl
-            metrics.json
-            student_results.csv
+            Practical-3/student_result_model.pkl
+            Practical-3/metrics.json
+            Practical-3/student_results.csv
           if-no-files-found: error
           retention-days: 7
