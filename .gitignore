@@ -1,0 +1,17 @@
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+venv/
+.venv/
+
+# Generated model files
+*.pkl
+*.joblib
+
+# IDE files
+.vscode/
+
+# Environment variables
+.env
