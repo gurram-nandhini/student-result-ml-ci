@@ -1,0 +1,7 @@
+**pycache**/
+*.pyc
+.git/
+.github/
+test_*.py
+student_results.csv
+release_candidate/
