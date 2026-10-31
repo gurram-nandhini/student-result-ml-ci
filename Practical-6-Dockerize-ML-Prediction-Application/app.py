@@ -26,6 +26,7 @@ def load_model():
     return joblib.load(MODEL_PATH)
 
 
+# Home / Health endpoint
 @app.get("/")
 def health_check():
     return jsonify({
@@ -34,6 +35,15 @@ def health_check():
     })
 
 
+# Practical 7 health endpoint
+@app.get("/health")
+def health():
+    return jsonify({
+        "status": "healthy"
+    })
+
+
+# Prediction endpoint
 @app.post("/predict")
 def predict():
     data = request.get_json(silent=True)
