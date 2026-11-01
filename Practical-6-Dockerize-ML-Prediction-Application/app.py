@@ -7,7 +7,9 @@ import uuid
 
 import joblib
 import pandas as pd
-from flask import Flask, jsonify, request
+
+from flask import Flask, jsonify, request, Response
+from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
 
 app = Flask(__name__)
 
@@ -20,14 +22,28 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger("student-result-api")
-
 logger.info("event=application_started")
 
 
-# Request logging
+# Prometheus metrics
+REQUEST_COUNT = Counter(
+    "http_requests_total",
+    "Total number of HTTP requests",
+    ["method", "endpoint", "status"]
+)
+
+REQUEST_LATENCY = Histogram(
+    "http_request_duration_seconds",
+    "HTTP request duration in seconds",
+    ["endpoint"]
+)
+
+
+# Request logging and monitoring
 @app.before_request
 def log_request_start():
     request.environ["request_start_time"] = time.time()
+    request.environ["request_timer"] = time.perf_counter()
     request.environ["request_id"] = str(uuid.uuid4())
 
     logger.info(
@@ -49,6 +65,21 @@ def log_request_end(response):
     request_id = request.environ.get(
         "request_id", "unknown"
     )
+
+    # Prometheus request counter
+    REQUEST_COUNT.labels(
+        method=request.method,
+        endpoint=request.path,
+        status=response.status_code
+    ).inc()
+
+    # Prometheus response time
+    timer = request.environ.get("request_timer")
+
+    if timer is not None:
+        REQUEST_LATENCY.labels(
+            endpoint=request.path
+        ).observe(time.perf_counter() - timer)
 
     logger.info(
         "event=request_completed request_id=%s status=%s duration_ms=%.2f",
@@ -101,7 +132,16 @@ def health():
     })
 
 
-# Prediction endpoint with error logging
+# Prometheus metrics endpoint
+@app.get("/metrics")
+def metrics():
+    return Response(
+        generate_latest(),
+        mimetype=CONTENT_TYPE_LATEST
+    )
+
+
+# Prediction endpoint
 @app.post("/predict")
 def predict():
 
@@ -179,4 +219,4 @@ if __name__ == "__main__":
     app.run(
         host="0.0.0.0",
         port=5000
-    )
+    )   
